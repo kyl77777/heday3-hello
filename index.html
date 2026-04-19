@@ -124,14 +124,16 @@
         </article>
 
         <article class="contact-form-card" aria-label="상담 신청서">
-          <form id="consultation-form" data-contact-form action="https://formspree.io/f/mwkgaqeo" method="POST" novalidate>
+          <form id="contact-form" data-contact-form action="https://formspree.io/f/mwkgaqeo" method="POST" novalidate>
             <div class="form-row">
               <label for="contact-name">성함</label>
               <input id="contact-name" name="name" type="text" autocomplete="name" placeholder="예: 김민수" required />
+              <p class="field-error" data-error="name" aria-live="polite"></p>
             </div>
             <div class="form-row">
               <label for="contact-phone">연락처</label>
               <input id="contact-phone" name="phone" type="tel" autocomplete="tel" placeholder="예: 010-1234-5678" required />
+              <p class="field-error" data-error="phone" aria-live="polite"></p>
             </div>
             <div class="form-row">
               <label for="contact-course">관심 과정</label>
@@ -141,15 +143,15 @@
                 <option value="workflow-automation">업무 자동화 실전 과정</option>
                 <option value="private-coaching">1:1 맞춤 코칭 과정</option>
               </select>
+              <p class="field-error" data-error="course" aria-live="polite"></p>
             </div>
             <div class="form-row">
               <label for="contact-message">상담 메모 (선택)</label>
               <textarea id="contact-message" name="message" rows="4" placeholder="현재 업무에서 자동화하고 싶은 내용을 적어주세요."></textarea>
             </div>
+            <p class="form-banner" data-submit-banner role="status" aria-live="polite" hidden></p>
             <button type="submit" class="btn btn-primary submit-btn">무료 상담 신청하기</button>
           </form>
-          <p id="contact-success-banner" class="form-banner form-banner-success" role="status" aria-live="polite" hidden>상담 신청이 완료되었습니다. 확인 후 빠르게 연락드리겠습니다.</p>
-          <p id="contact-error-banner" class="form-banner form-banner-error" role="alert" aria-live="assertive" hidden>입력 내용을 확인해 주세요.</p>
         </article>
       </div>
     </section>

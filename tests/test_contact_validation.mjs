@@ -4,125 +4,189 @@ import assert from 'node:assert/strict';
 import { setupContactForm, validateContactForm } from '../assets/js/contact.mjs';
 
 function createMockEnvironment(fields = {}) {
+  const fieldErrors = {
+    name: { textContent: '' },
+    phone: { textContent: '' },
+    course: { textContent: '' },
+  };
+
+  const submitBanner = {
+    hidden: true,
+    textContent: '',
+    dataset: {},
+  };
+
   const form = {
+    action: 'https://formspree.io/f/mwkgaqeo',
+    method: 'POST',
     fields,
     submitHandler: null,
+    resetCalled: false,
     addEventListener(eventName, handler) {
       if (eventName === 'submit') {
         this.submitHandler = handler;
       }
     },
+    reset() {
+      this.resetCalled = true;
+      this.fields = {};
+    },
   };
 
-  const successBanner = { hidden: true, textContent: '' };
-  const errorBanner = { hidden: true, textContent: '' };
+  const mockDocument = {
+    querySelector(selector) {
+      if (selector === '[data-contact-form]') {
+        return form;
+      }
 
-  return { form, successBanner, errorBanner };
+      if (selector === '[data-submit-banner]') {
+        return submitBanner;
+      }
+
+      if (selector === '[data-error="name"]') {
+        return fieldErrors.name;
+      }
+
+      if (selector === '[data-error="phone"]') {
+        return fieldErrors.phone;
+      }
+
+      if (selector === '[data-error="course"]') {
+        return fieldErrors.course;
+      }
+
+      return null;
+    },
+    addEventListener() {},
+  };
+
+  return { form, submitBanner, fieldErrors, mockDocument };
 }
 
-test('validateContactForm returns errors for required fields', () => {
-  const result = validateContactForm({ name: '', phone: '', course: '' });
+test('validateContactForm returns only errors object for required fields', () => {
+  const errors = validateContactForm({ name: '', phone: '', course: '' });
 
-  assert.equal(result.isValid, false);
-  assert.equal(result.errors.name, '성함을 입력해 주세요.');
-  assert.equal(result.errors.phone, '연락처를 입력해 주세요.');
-  assert.equal(result.errors.course, '관심 과정을 선택해 주세요.');
+  assert.deepEqual(errors, {
+    name: '성함을 입력해 주세요.',
+    phone: '연락처를 입력해 주세요.',
+    course: '관심 과정을 선택해 주세요.',
+  });
 });
 
 test('validateContactForm rejects invalid phone format', () => {
-  const result = validateContactForm({
+  const errors = validateContactForm({
     name: '홍길동',
     phone: '010-12-9999',
     course: 'ai-code-basic',
   });
 
-  assert.equal(result.isValid, false);
-  assert.equal(result.errors.phone, '연락처 형식을 확인해 주세요. (예: 010-1234-5678)');
+  assert.deepEqual(errors, {
+    phone: '연락처 형식을 확인해 주세요. (예: 010-1234-5678)',
+  });
 });
 
 test('validateContactForm passes with valid required values', () => {
-  const result = validateContactForm({
+  const errors = validateContactForm({
     name: '홍길동',
     phone: '01012345678',
     course: 'workflow-automation',
   });
 
-  assert.equal(result.isValid, true);
-  assert.deepEqual(result.errors, {});
+  assert.deepEqual(errors, {});
 });
 
-test('setupContactForm shows error banner and skips submission on validation error', async () => {
-  const { form, successBanner, errorBanner } = createMockEnvironment({
+test('setupContactForm sets field-level errors and skips submission on validation error', async () => {
+  const { form, submitBanner, fieldErrors, mockDocument } = createMockEnvironment({
     name: '',
     phone: '',
     course: '',
   });
 
   let fetchCalled = false;
+  const originalDocument = globalThis.document;
+  globalThis.document = mockDocument;
 
-  setupContactForm({
-    form,
-    successBanner,
-    errorBanner,
-    fetchImpl: async () => {
-      fetchCalled = true;
-      return { ok: true };
-    },
-  });
+  try {
+    setupContactForm({
+      fetchImpl: async () => {
+        fetchCalled = true;
+        return { ok: true };
+      },
+    });
 
-  await form.submitHandler({
-    preventDefault() {},
-  });
+    await form.submitHandler({
+      preventDefault() {},
+    });
+  } finally {
+    globalThis.document = originalDocument;
+  }
 
   assert.equal(fetchCalled, false);
-  assert.equal(successBanner.hidden, true);
-  assert.equal(errorBanner.hidden, false);
-  assert.match(errorBanner.textContent, /성함/);
+  assert.equal(submitBanner.hidden, false);
+  assert.match(submitBanner.textContent, /입력 내용을 확인/);
+  assert.equal(fieldErrors.name.textContent, '성함을 입력해 주세요.');
+  assert.equal(fieldErrors.phone.textContent, '연락처를 입력해 주세요.');
+  assert.equal(fieldErrors.course.textContent, '관심 과정을 선택해 주세요.');
 });
 
-test('setupContactForm shows success banner on successful submission', async () => {
-  const { form, successBanner, errorBanner } = createMockEnvironment({
+test('setupContactForm posts to form.action and shows success in data-submit-banner', async () => {
+  const { form, submitBanner, fieldErrors, mockDocument } = createMockEnvironment({
     name: '홍길동',
     phone: '010-1234-5678',
     course: 'ai-code-basic',
     message: '상담 부탁드립니다.',
   });
 
-  setupContactForm({
-    form,
-    successBanner,
-    errorBanner,
-    fetchImpl: async () => ({ ok: true }),
-  });
+  let fetchArgs;
+  const originalDocument = globalThis.document;
+  globalThis.document = mockDocument;
 
-  await form.submitHandler({
-    preventDefault() {},
-  });
+  try {
+    setupContactForm({
+      fetchImpl: async (...args) => {
+        fetchArgs = args;
+        return { ok: true };
+      },
+    });
 
-  assert.equal(successBanner.hidden, false);
-  assert.equal(errorBanner.hidden, true);
-  assert.match(successBanner.textContent, /완료/);
+    await form.submitHandler({
+      preventDefault() {},
+    });
+  } finally {
+    globalThis.document = originalDocument;
+  }
+
+  assert.equal(fetchArgs[0], 'https://formspree.io/f/mwkgaqeo');
+  assert.equal(fetchArgs[1].method, 'POST');
+  assert.equal(submitBanner.hidden, false);
+  assert.match(submitBanner.textContent, /완료/);
+  assert.equal(fieldErrors.name.textContent, '');
+  assert.equal(fieldErrors.phone.textContent, '');
+  assert.equal(fieldErrors.course.textContent, '');
 });
 
-test('setupContactForm shows error banner when submission fails', async () => {
-  const { form, successBanner, errorBanner } = createMockEnvironment({
+test('setupContactForm shows submit error in data-submit-banner when submission fails', async () => {
+  const { form, submitBanner, mockDocument } = createMockEnvironment({
     name: '홍길동',
     phone: '010-1234-5678',
     course: 'private-coaching',
   });
 
-  setupContactForm({
-    form,
-    successBanner,
-    errorBanner,
-    fetchImpl: async () => ({ ok: false }),
-  });
+  const originalDocument = globalThis.document;
+  globalThis.document = mockDocument;
 
-  await form.submitHandler({
-    preventDefault() {},
-  });
+  try {
+    setupContactForm({
+      fetchImpl: async () => ({ ok: false }),
+    });
 
-  assert.equal(successBanner.hidden, true);
-  assert.equal(errorBanner.hidden, false);
-  assert.match(errorBanner.textContent, /문제가 발생/);
+    await form.submitHandler({
+      preventDefault() {},
+    });
+  } finally {
+    globalThis.document = originalDocument;
+  }
+
+  assert.equal(submitBanner.hidden, false);
+  assert.match(submitBanner.textContent, /문제가 발생/);
 });
