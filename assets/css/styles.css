@@ -594,8 +594,9 @@ p {
   box-shadow: var(--shadow-ambient);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
 }
 
 .sticky-cta p {

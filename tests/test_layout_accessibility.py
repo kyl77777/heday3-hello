@@ -9,6 +9,8 @@ class LayoutHTMLParser(HTMLParser):
         super().__init__()
         self.stylesheets = []
         self.elements_with_classes = []
+        self.in_sticky_cta_depth = 0
+        self.sticky_cta_hrefs = set()
 
     def handle_starttag(self, tag, attrs):
         attrs_dict = dict(attrs)
@@ -21,6 +23,21 @@ class LayoutHTMLParser(HTMLParser):
         classes = set(class_attr.split())
         if classes:
             self.elements_with_classes.append(classes)
+
+        if self.in_sticky_cta_depth > 0:
+            self.in_sticky_cta_depth += 1
+
+        if "sticky-cta" in classes:
+            self.in_sticky_cta_depth = 1
+
+        if self.in_sticky_cta_depth > 0 and tag == "a":
+            href = attrs_dict.get("href")
+            if href:
+                self.sticky_cta_hrefs.add(href)
+
+    def handle_endtag(self, _tag):
+        if self.in_sticky_cta_depth > 0:
+            self.in_sticky_cta_depth -= 1
 
 
 class LayoutAccessibilityTests(unittest.TestCase):
@@ -56,6 +73,7 @@ class LayoutAccessibilityTests(unittest.TestCase):
         parser.feed(cls.html)
         cls.stylesheets = parser.stylesheets
         cls.elements_with_classes = parser.elements_with_classes
+        cls.sticky_cta_hrefs = parser.sticky_cta_hrefs
 
         if not cls.css_path.exists():
             raise AssertionError("assets/css/styles.css must exist")
@@ -71,6 +89,18 @@ class LayoutAccessibilityTests(unittest.TestCase):
     def test_sticky_cta_class_exists(self):
         has_sticky_cta = any("sticky-cta" in classes for classes in self.elements_with_classes)
         self.assertTrue(has_sticky_cta, msg="Sticky CTA bar with class 'sticky-cta' is required")
+
+    def test_sticky_cta_has_three_consultation_links(self):
+        required_hrefs = {
+            "tel:0212345678",
+            "https://open.kakao.com/o/aiassistedu",
+            "#contact",
+        }
+        missing_hrefs = required_hrefs - self.sticky_cta_hrefs
+        self.assertFalse(
+            missing_hrefs,
+            msg=f"Sticky CTA must include phone/kakao/form links. Missing: {sorted(missing_hrefs)}",
+        )
 
     def test_sticky_cta_css_has_fixed_bottom_anchor(self):
         sticky_block = self._extract_css_block(self.css, r"\.sticky-cta\s*\{")
