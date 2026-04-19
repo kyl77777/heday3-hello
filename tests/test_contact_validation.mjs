@@ -10,10 +10,22 @@ function createMockEnvironment(fields = {}) {
     course: { textContent: '' },
   };
 
+  const submitBannerClasses = new Set(['form-banner']);
   const submitBanner = {
     hidden: true,
     textContent: '',
     dataset: {},
+    classList: {
+      add(...classNames) {
+        classNames.forEach((className) => submitBannerClasses.add(className));
+      },
+      remove(...classNames) {
+        classNames.forEach((className) => submitBannerClasses.delete(className));
+      },
+      contains(className) {
+        return submitBannerClasses.has(className);
+      },
+    },
   };
 
   const form = {
@@ -123,6 +135,10 @@ test('setupContactForm sets field-level errors and skips submission on validatio
 
   assert.equal(fetchCalled, false);
   assert.equal(submitBanner.hidden, false);
+  assert.equal(submitBanner.dataset.state, 'validation');
+  assert.equal(submitBanner.classList.contains('form-banner-validation'), true);
+  assert.equal(submitBanner.classList.contains('form-banner-success'), false);
+  assert.equal(submitBanner.classList.contains('form-banner-error'), false);
   assert.match(submitBanner.textContent, /입력 내용을 확인/);
   assert.equal(fieldErrors.name.textContent, '성함을 입력해 주세요.');
   assert.equal(fieldErrors.phone.textContent, '연락처를 입력해 주세요.');
@@ -159,6 +175,10 @@ test('setupContactForm posts to form.action and shows success in data-submit-ban
   assert.equal(fetchArgs[0], 'https://formspree.io/f/mwkgaqeo');
   assert.equal(fetchArgs[1].method, 'POST');
   assert.equal(submitBanner.hidden, false);
+  assert.equal(submitBanner.dataset.state, 'success');
+  assert.equal(submitBanner.classList.contains('form-banner-success'), true);
+  assert.equal(submitBanner.classList.contains('form-banner-validation'), false);
+  assert.equal(submitBanner.classList.contains('form-banner-error'), false);
   assert.match(submitBanner.textContent, /완료/);
   assert.equal(fieldErrors.name.textContent, '');
   assert.equal(fieldErrors.phone.textContent, '');
@@ -188,5 +208,9 @@ test('setupContactForm shows submit error in data-submit-banner when submission 
   }
 
   assert.equal(submitBanner.hidden, false);
+  assert.equal(submitBanner.dataset.state, 'error');
+  assert.equal(submitBanner.classList.contains('form-banner-error'), true);
+  assert.equal(submitBanner.classList.contains('form-banner-validation'), false);
+  assert.equal(submitBanner.classList.contains('form-banner-success'), false);
   assert.match(submitBanner.textContent, /문제가 발생/);
 });

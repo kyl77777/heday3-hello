@@ -94,13 +94,39 @@ function setFieldErrors(form, errors) {
   });
 }
 
-function showSubmitBanner(submitBanner, message) {
+const SUBMIT_BANNER_STATE_CLASSES = {
+  success: 'form-banner-success',
+  error: 'form-banner-error',
+  validation: 'form-banner-validation',
+};
+
+function applySubmitBannerState(submitBanner, state) {
+  if (!submitBanner) {
+    return;
+  }
+
+  const classNames = Object.values(SUBMIT_BANNER_STATE_CLASSES);
+  if (submitBanner.classList && typeof submitBanner.classList.remove === 'function') {
+    submitBanner.classList.remove(...classNames);
+    const nextClass = SUBMIT_BANNER_STATE_CLASSES[state];
+    if (nextClass) {
+      submitBanner.classList.add(nextClass);
+    }
+  }
+
+  if (submitBanner.dataset) {
+    submitBanner.dataset.state = state;
+  }
+}
+
+function showSubmitBanner(submitBanner, message, state) {
   if (!submitBanner) {
     return;
   }
 
   submitBanner.hidden = false;
   submitBanner.textContent = message;
+  applySubmitBannerState(submitBanner, state);
 }
 
 function createRequestBody(form, rawValues) {
@@ -134,14 +160,14 @@ export function setupContactForm(options = {}) {
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(form, errors);
-      showSubmitBanner(submitBanner, VALIDATION_ERROR_MESSAGE);
+      showSubmitBanner(submitBanner, VALIDATION_ERROR_MESSAGE, 'validation');
       return;
     }
 
     clearFieldErrors(form);
 
     if (!fetchImpl) {
-      showSubmitBanner(submitBanner, SUBMIT_ERROR_MESSAGE);
+      showSubmitBanner(submitBanner, SUBMIT_ERROR_MESSAGE, 'error');
       return;
     }
 
@@ -158,12 +184,12 @@ export function setupContactForm(options = {}) {
         throw new Error('submit-failed');
       }
 
-      showSubmitBanner(submitBanner, SUCCESS_MESSAGE);
+      showSubmitBanner(submitBanner, SUCCESS_MESSAGE, 'success');
       if (typeof form.reset === 'function') {
         form.reset();
       }
     } catch (_error) {
-      showSubmitBanner(submitBanner, SUBMIT_ERROR_MESSAGE);
+      showSubmitBanner(submitBanner, SUBMIT_ERROR_MESSAGE, 'error');
     }
   });
 
