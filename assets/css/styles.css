@@ -25,6 +25,7 @@ body {
   color: var(--text);
   line-height: 1.65;
   letter-spacing: -0.01em;
+  padding-bottom: 7.5rem;
 }
 
 a {
@@ -294,6 +295,10 @@ p {
 }
 
 @media (max-width: 768px) {
+  body {
+    padding-bottom: 10.5rem;
+  }
+
   .section {
     padding: 4rem 0;
   }
