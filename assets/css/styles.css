@@ -243,6 +243,112 @@ p {
   font-size: 1.12rem;
 }
 
+.contact-shell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+  align-items: stretch;
+}
+
+.contact-intro,
+.contact-form-card {
+  border-radius: 1.5rem;
+  padding: 1.8rem;
+}
+
+.contact-intro {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.contact-intro p {
+  margin-top: 1rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.contact-meta-list {
+  margin-top: 1.4rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.contact-meta-list p {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.contact-meta-list strong {
+  color: #fff;
+}
+
+.contact-form-card {
+  background: var(--paper);
+  color: var(--text);
+  box-shadow: var(--shadow-ambient);
+}
+
+.form-row {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.form-row + .form-row {
+  margin-top: 0.9rem;
+}
+
+.form-row label {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  width: 100%;
+  border: 1px solid #d5dae0;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: #fff;
+}
+
+.form-row textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  outline: 2px solid rgba(0, 74, 153, 0.24);
+  border-color: var(--primary-strong);
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 1.2rem;
+}
+
+.form-banner {
+  margin-top: 0.9rem;
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.form-banner-success {
+  background: #e9f8ec;
+  color: #1f6d2b;
+}
+
+.form-banner-error {
+  background: #ffe8e8;
+  color: #a12020;
+}
+
 .narrow {
   width: min(840px, calc(100% - 3rem));
 }
@@ -315,8 +421,14 @@ p {
 
   .card-grid,
   .curriculum-grid,
-  .split-grid {
+  .split-grid,
+  .contact-shell {
     grid-template-columns: 1fr;
+  }
+
+  .contact-intro,
+  .contact-form-card {
+    padding: 1.35rem;
   }
 
   .sticky-cta {
